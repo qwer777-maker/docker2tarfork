@@ -47,8 +47,8 @@ jobs:
           git clone https://github.com/qwer777-maker/docker2tarfork
           cd docker2tarfork
           docker build -t ${image_name} .
-          docker save "${image}" -o "${file_name}"
           cd ..
+          docker save "${image}" -o "${file_name}"
         done
 
     - name: 列出要调试的文件
