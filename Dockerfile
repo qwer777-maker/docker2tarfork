@@ -1,8 +1,6 @@
 FROM --platform=$BUILDPLATFORM node:16 AS builder
 
 WORKDIR /web
-COPY ./VERSION .
-COPY ./web .
 
 RUN npm install --prefix /web/default & \
     npm install --prefix /web/berry & \
@@ -31,8 +29,7 @@ WORKDIR /build
 ADD go.mod go.sum ./
 RUN go mod download
 
-COPY . .
-COPY --from=builder /web/build ./web/build
+
 
 RUN go build -trimpath -ldflags "-s -w -X 'github.com/songquanpeng/one-api/common.Version=$(cat VERSION)' -linkmode external -extldflags '-static'" -o one-api
 
