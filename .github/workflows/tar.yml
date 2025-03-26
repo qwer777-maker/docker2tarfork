@@ -44,7 +44,7 @@ jobs:
           image_tag="${image##*:}"
 
           file_name="${image_name}.tar"
-          docker pull  --platform ${{ github.event.inputs.docker_arch }} "${image}"
+          docker build -t ${image_name} .
           docker save "${image}" -o "${file_name}"
         done
 
