@@ -26,12 +26,6 @@ ENV GO111MODULE=on \
 
 WORKDIR /build
 
-ADD go.mod go.sum ./
-RUN go mod download
-
-
-
-RUN go build -trimpath -ldflags "-s -w -X 'github.com/songquanpeng/one-api/common.Version=$(cat VERSION)' -linkmode external -extldflags '-static'" -o one-api
 
 FROM alpine:latest
 
