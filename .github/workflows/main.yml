@@ -14,7 +14,6 @@ on:
         type: choice
         options: 
           - ' '
-          - amd64
           - -arm
       tag:
         description: '可选: 发布标签 (默认为当前日期)'
