@@ -1,4 +1,4 @@
-name: Docker镜像智能打包离线包
+name: Docker-amd64镜像智能打包离线包
 
 on:
   workflow_dispatch:
