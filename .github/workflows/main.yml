@@ -8,7 +8,7 @@ on:
         required: true
         default: 'alpine:latest'
       machine_arch:
-        description: '请填写 Docker 镜像架构'
+        description: '请填写 机器 镜像架构'
         required: true
         default: 'ubuntu-latest'
         type: choice
