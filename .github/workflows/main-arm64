@@ -10,7 +10,7 @@ on:
       docker_arch:
         description: '请填写 Docker 镜像架构'
         required: true
-        default: 'amd64'
+        default: 'arm64'
         type: choice
         options: 
           - amd64
