@@ -21,7 +21,7 @@ on:
 
 jobs:
   pull_and_package:
-    runs-on: ubuntu-${{ github.event.inputs.docker_arch }}
+    runs-on: ${{ github.event.inputs.docker_arch }}
 
     steps:
     - name: 清理 Docker 以释放空间
