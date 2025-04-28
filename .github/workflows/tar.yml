@@ -1,0 +1,141 @@
+name: Docker-amd64镜像智能tar打包离线包
+
+on:
+  workflow_dispatch:
+    inputs:
+      docker_images:
+        description: '请填写 Docker 镜像名称 (多个用英文逗号分开)'
+        required: true
+        default: 'alpine:latest'
+      docker_arch:
+        description: '请填写 Docker 镜像架构'
+        required: true
+        default: ''
+        type: choice
+        options: 
+          - amd64
+          - -arm
+      tag:
+        description: '可选: 发布标签 (默认为当前日期)'
+        required: false
+
+jobs:
+  pull_and_package:
+    runs-on: ubuntu-22.04${{ github.event.inputs.docker_arch }}
+
+    steps:
+    - name: 清理 Docker 以释放空间
+      run: |
+        docker system prune -a -f
+        docker volume prune -f
+        
+    - name: Move Docker data directory
+      run: |
+        sudo systemctl stop docker
+        sudo mkdir -p /mnt/docker
+        sudo rsync -avz /var/lib/docker/ /mnt/docker
+        sudo rm -rf /var/lib/docker 
+        sudo ln -s /mnt/docker /var/lib/docker
+        sudo systemctl start docker
+
+    - name: 拉取并保存多架构Docker镜像
+      run: |
+        images="${{ github.event.inputs.docker_images }}"
+        IFS=',' read -r -a image_array <<< "$images"
+        for image in "${image_array[@]}"; do
+          image_name_with_registry="${image%%:*}"
+          image_name="${image_name_with_registry##*/}"
+          image_tag="${image##*:}"
+
+          file_name="${image_name}.tar"
+          git clone https://github.com/qwer777-maker/docker2tarfork
+          cd docker2tarfork
+          docker build -t ${image_name} .
+          cd ..
+          docker save "${image}" -o "${file_name}"
+        done
+
+    - name: 列出要调试的文件
+      run: |
+        ls -lh
+
+    - name: 确定文件处理逻辑
+      id: determine_logic
+      run: |
+        images="${{ github.event.inputs.docker_images }}"
+        IFS=',' read -r -a image_array <<< "$images"
+        num_images=${#image_array[@]}
+
+        if [ $num_images -eq 1 ]; then
+          single_file="${image_array[0]%%:*}"
+          single_file="${single_file##*/}.tar"
+          echo "RELEASE_NAME=${single_file}" >> $GITHUB_ENV
+          echo "num_images=1" >> $GITHUB_OUTPUT
+        else
+          if [ -z "${{ github.event.inputs.custom_name }}" ]; then
+            archive_name="$(date +'%Y%m%d').tar.gz"
+          else
+            archive_name="${{ github.event.inputs.custom_name }}.tar.gz"
+          fi
+          echo "RELEASE_NAME=${archive_name}" >> $GITHUB_ENV
+          echo "num_images=$num_images" >> $GITHUB_OUTPUT
+        fi
+
+    - name: 必要时进行压缩
+      if: steps.determine_logic.outputs.num_images > 1
+      run: |
+        tar -czf "${{ env.RELEASE_NAME }}" *.tar
+
+    - name: 检查文件大小
+      id: check_size
+      run: |
+        file="${{ env.RELEASE_NAME }}"
+        file_size=$(stat -c%s "$file")
+        max_size=$((2 * 1024 * 1024 * 1024))
+
+        if [ "$file_size" -gt "$max_size" ]; then
+          echo "EXCEEDS_LIMIT=true" >> $GITHUB_ENV
+        else
+          echo "EXCEEDS_LIMIT=false" >> $GITHUB_ENV
+        fi
+
+    - name: 获取发布名称和标签
+      run: |
+        if [ ${{ steps.determine_logic.outputs.num_images }} -gt 1 ]; then
+          if [ -z "${{ github.event.inputs.custom_name }}" ]; then
+            release_name="${{ env.RELEASE_NAME }}"
+          else
+            release_name="${{ github.event.inputs.custom_name }}.tar.gz"
+          fi
+        else
+          release_name="${{ env.RELEASE_NAME }}"
+        fi
+        echo "RELEASE_NAME=$release_name" >> $GITHUB_ENV
+
+        if [ -z "${{ github.event.inputs.tag }}" ]; then
+          tag_name=$(date +'%Y%m%d')
+        else
+          tag_name="${{ github.event.inputs.tag }}"
+        fi
+        echo "RELEASE_TAG=$tag_name" >> $GITHUB_ENV
+
+    - name: 上传至GitHub Release（如果小于2GB）
+      if: env.EXCEEDS_LIMIT == 'false'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ env.RELEASE_TAG }}
+        files: ${{ env.RELEASE_NAME }}
+        body: "Daily Docker Images for ${{ env.RELEASE_TAG }}"
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 上传为工件（如果超过2GB）
+      if: env.EXCEEDS_LIMIT == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.RELEASE_NAME }}
+        path: ${{ env.RELEASE_NAME }}
+
+    - name: 清理中间文件（如果小于2GB）
+      if: env.EXCEEDS_LIMIT == 'false'
+      run: |
+        rm *.tar
