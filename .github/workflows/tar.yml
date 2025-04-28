@@ -10,10 +10,10 @@ on:
       machine_arch:
         description: '请填写 机器 镜像架构'
         required: true
-        default: 'ubuntu-latest'
+        default: 'ubuntu-22.04'
         type: choice
         options: 
-          - ubuntu-latest
+          - ubuntu-22.04
           - ubuntu-22.04-arm
       docker_arch:
         description: '请填写 Docker 镜像架构'
