@@ -11,9 +11,9 @@ on:
 #变量配置      
 env:
   #镜像名称
-  IMAGE_NAME: frontend
+  IMAGE_NAME: sing-box
   #dockerHub仓库名称
-  DOCKER_REGISTRY: dweizhao
+  DOCKER_REGISTRY: niceqwer55555
 jobs:
   build-image:
     #运行的环境  
