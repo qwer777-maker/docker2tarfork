@@ -13,7 +13,7 @@ env:
   #镜像名称
   IMAGE_NAME: sing-box
   #dockerHub仓库名称
-  DOCKER_REGISTRY: niceqwer55555
+  DOCKER_REGISTRY: niceqwer555
 jobs:
   build-image:
     #运行的环境  
