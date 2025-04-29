@@ -42,21 +42,17 @@ jobs:
         #这里引用的变量为上一步配置的变量
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}     
-      # 打包构建并推送
+      # 打包构建并推送 linux/386  linux/mips64le linux/ppc64le linux/s390x
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
           context: .
           file: ./Dockerfile
           platforms: |
-        #    linux/386
             linux/amd64
             linux/arm/v5
             linux/arm/v7
             linux/arm64
-       #     linux/mips64le
-       #     linux/ppc64le
-       #     linux/s390x
           #推送到镜像仓库  
           push: true
           # 这里会构建两个版本镜像，
